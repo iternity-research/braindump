@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BrainDump — Raj Renos Inc.</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1B3A5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BrainDump">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0f1923;
+    color: #e0e6ed;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== TOP BAR ===== */
+  .top-bar {
+    background: #1B3A5C;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .top-bar h1 {
+    font-size: 20px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .top-bar h1 span { color: #E8792F; }
+  .top-bar-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .stat-dot.urgent { background: #e74c3c; }
+  .stat-dot.open { background: #E8792F; }
+  .stat-dot.done { background: #27ae60; }
+
+  /* ===== QUICK ADD ===== */
+  .quick-add {
+    padding: 16px 24px;
+    background: #162a3d;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border-bottom: 1px solid #1e3a52;
+  }
+  .quick-add input {
+    flex: 1;
+    padding: 10px 16px;
+    background: #0f1923;
+    border: 1px solid #2a4a65;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    outline: none;
+  }
+  .quick-add input:focus { border-color: #E8792F; }
+  .quick-add input::placeholder { color: #5a7a95; }
+  .quick-add select {
+    padding: 10px 12px;
+    background: #0f1923;
+    border: 1px solid #2a4a65;
+    border-radius: 8px;
+    color: #e0e6ed;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+  .quick-add select:focus { border-color: #E8792F; }
+  .add-btn {
+    padding: 10px 20px;
+    background: #E8792F;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .add-btn:hover { background: #d06a25; }
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar {
+    padding: 10px 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #1e3a52;
+    background: #14253a;
+  }
+  .filter-chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #2a4a65;
+    background: transparent;
+    color: #8aa5be;
+    transition: all 0.2s;
+  }
+  .filter-chip:hover { border-color: #E8792F; color: #E8792F; }
+  .filter-chip.active { background: #E8792F; color: white; border-color: #E8792F; }
+
+  /* ===== COLUMNS LAYOUT ===== */
+  .board {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    min-height: calc(100vh - 140px);
+  }
+
+  .column {
+    border-right: 1px solid #1e3a52;
+    padding: 16px;
+    min-height: 400px;
+  }
+  .column:last-child { border-right: none; }
+
+  .col-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid;
+  }
+  .col-header h2 {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .col-count {
+    background: rgba(255,255,255,0.1);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .col-urgent .col-header { border-color: #e74c3c; }
+  .col-urgent .col-header h2 { color: #e74c3c; }
+  .col-open .col-header { border-color: #E8792F; }
+  .col-open .col-header h2 { color: #E8792F; }
+  .col-done .col-header { border-color: #27ae60; }
+  .col-done .col-header h2 { color: #27ae60; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: #162a3d;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border-left: 4px solid;
+    cursor: default;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .card:hover { background: #1a3248; transform: translateX(2px); }
+
+  .card.priority-urgent { border-left-color: #e74c3c; }
+  .card.priority-high { border-left-color: #E8792F; }
+  .card.priority-normal { border-left-color: #3498db; }
+  .card.priority-low { border-left-color: #7f8c8d; }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    padding-right: 25px;
+  }
+  .card-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .card-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .tag-business { background: rgba(52,152,219,0.2); color: #5dade2; }
+  .tag-personal { background: rgba(155,89,182,0.2); color: #bb8fce; }
+  .tag-insurance { background: rgba(231,76,60,0.2); color: #ec7063; }
+  .tag-finance { background: rgba(39,174,96,0.2); color: #58d68d; }
+  .tag-property { background: rgba(241,196,15,0.2); color: #f4d03f; }
+  .tag-product { background: rgba(232,121,47,0.2); color: #E8792F; }
+  .tag-vehicle { background: rgba(52,73,94,0.2); color: #85929e; }
+
+  .card-date {
+    font-size: 10px;
+    color: #5a7a95;
+  }
+  .card-due {
+    font-size: 10px;
+    color: #e74c3c;
+    font-weight: 600;
+  }
+
+  .card-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover .card-actions { opacity: 1; }
+
+  .card-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .card-btn.move-left { background: #e74c3c; color: white; }
+  .card-btn.move-right { background: #27ae60; color: white; }
+  .card-btn.delete { background: #555; color: #ccc; }
+  .card-btn:hover { transform: scale(1.15); }
+
+  .card.done-card { opacity: 0.6; }
+  .card.done-card .card-title { text-decoration: line-through; }
+
+  /* ===== NOTES SECTION ===== */
+  .notes-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #162a3d;
+    border-top: 1px solid #1e3a52;
+    padding: 10px 24px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 100;
+  }
+  .notes-bar textarea {
+    flex: 1;
+    padding: 8px 14px;
+    background: #0f1923;
+    border: 1px solid #2a4a65;
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-family: inherit;
+    resize: none;
+    height: 36px;
+    outline: none;
+  }
+  .notes-bar textarea:focus { border-color: #E8792F; }
+  .notes-label { font-size: 12px; color: #5a7a95; font-weight: 600; white-space: nowrap; }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-col {
+    text-align: center;
+    color: #3a5a75;
+    font-size: 13px;
+    padding: 30px 10px;
+    font-style: italic;
+  }
+
+  /* ===== CLEAR DONE ===== */
+  .clear-done-btn {
+    background: none;
+    border: 1px solid #2a4a65;
+    color: #5a7a95;
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .clear-done-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+
+  /* ===== UNDO TOAST ===== */
+  .undo-toast {
+    position: fixed;
+    bottom: 65px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1B3A5C;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+    z-index: 200;
+    transition: transform 0.3s ease;
+    border: 1px solid #2a4a65;
+  }
+  .undo-toast.visible { transform: translateX(-50%) translateY(0); }
+  .undo-toast .undo-btn {
+    padding: 5px 14px;
+    background: #E8792F;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .undo-toast .undo-btn:hover { background: #d06a25; }
+  .undo-toast .dismiss-btn {
+    background: none;
+    border: none;
+    color: #5a7a95;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .board { grid-template-columns: 1fr; }
+    .column { border-right: none; border-bottom: 1px solid #1e3a52; }
+    .top-bar { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+    .top-bar h1 { font-size: 17px; }
+    .top-bar-stats { gap: 12px; font-size: 12px; }
+    .quick-add { flex-wrap: wrap; padding: 12px 14px; }
+    .quick-add input { min-width: 100%; }
+    .quick-add select { flex: 1; }
+    .filter-bar { padding: 8px 14px; }
+    .column { padding: 12px; }
+    .notes-bar { padding: 8px 14px; }
+    .card { padding: 12px; }
+    .card-actions { opacity: 1; } /* Always show on mobile */
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>Brain <span>Dump</span> Board</h1>
+  <div class="top-bar-stats">
+    <div class="stat"><div class="stat-dot urgent"></div><span id="urgentCount">0</span> Urgent</div>
+    <div class="stat"><div class="stat-dot open"></div><span id="openCount">0</span> Open</div>
+    <div class="stat"><div class="stat-dot done"></div><span id="doneCount">0</span> Done</div>
+  </div>
+</div>
+
+<div class="quick-add">
+  <input type="text" id="newTask" placeholder="Dump it here — what's on your mind?" onkeydown="if(event.key==='Enter')addTask()">
+  <select id="newCategory">
+    <option value="business">Business</option>
+    <option value="personal">Personal</option>
+    <option value="insurance">Insurance</option>
+    <option value="finance">Finance</option>
+    <option value="property">Property</option>
+    <option value="product">Product</option>
+    <option value="vehicle">Vehicle</option>
+  </select>
+  <select id="newPriority">
+    <option value="normal">Normal</option>
+    <option value="urgent">Urgent</option>
+    <option value="high">High</option>
+    <option value="low">Low</option>
+  </select>
+  <button class="add-btn" onclick="addTask()">+ Add</button>
+</div>
+
+<div class="filter-bar">
+  <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+  <button class="filter-chip" onclick="setFilter('business', this)">Business</button>
+  <button class="filter-chip" onclick="setFilter('personal', this)">Personal</button>
+  <button class="filter-chip" onclick="setFilter('insurance', this)">Insurance</button>
+  <button class="filter-chip" onclick="setFilter('finance', this)">Finance</button>
+  <button class="filter-chip" onclick="setFilter('property', this)">Property</button>
+  <button class="filter-chip" onclick="setFilter('product', this)">Product</button>
+  <button class="filter-chip" onclick="setFilter('vehicle', this)">Vehicle</button>
+</div>
+
+<div class="board">
+  <div class="column col-urgent">
+    <div class="col-header">
+      <h2>Urgent / Now</h2>
+      <span class="col-count" id="urgentColCount">0</span>
+    </div>
+    <div id="urgentList"></div>
+  </div>
+  <div class="column col-open">
+    <div class="col-header">
+      <h2>Open / Pending</h2>
+      <span class="col-count" id="openColCount">0</span>
+    </div>
+    <div id="openList"></div>
+  </div>
+  <div class="column col-done">
+    <div class="col-header">
+      <h2>Done <button class="clear-done-btn" onclick="clearDone()">Clear All</button></h2>
+      <span class="col-count" id="doneColCount">0</span>
+    </div>
+    <div id="doneList"></div>
+  </div>
+</div>
+
+<div class="undo-toast" id="undoToast">
+  <span id="undoMsg">Action undone</span>
+  <button class="undo-btn" onclick="undoAction()">UNDO</button>
+  <button class="dismiss-btn" onclick="hideUndo()">&times;</button>
+</div>
+
+<div class="notes-bar">
+  <span class="notes-label">Quick Note:</span>
+  <textarea id="quickNote" placeholder="Scratch pad — jot anything here, it saves automatically..." oninput="saveNotes()"></textarea>
+</div>
+
+<script>
+// ===== DATA =====
+let tasks = [];
+let currentFilter = "all";
+let undoStack = [];  // Stack of previous states for undo
+let undoTimeout = null;
+
+const DEFAULT_TASKS = [
+  // From our sessions — pre-loaded
+  { id: 1, title: "GAP Claim #166312 — Wait for confirmation from Insurance Insight", category: "insurance", priority: "high", status: "open", created: "2026-03-05", due: "" },
+  { id: 2, title: "Wait for Shrey's response — Declaration page request email sent", category: "insurance", priority: "normal", status: "open", created: "2026-03-05", due: "" },
+  { id: 3, title: "Call TD for updated current balance statement (Jan 27 is 37 days old)", category: "finance", priority: "high", status: "open", created: "2026-03-05", due: "" },
+  { id: 4, title: "Search personal Gmail for more important docs (utilities, mortgage, etc.)", category: "personal", priority: "normal", status: "open", created: "2026-03-05", due: "" },
+  { id: 5, title: "Payment tracking — Build tracker for all recurring bills (insurance, utilities, phone, internet, property tax, loans)", category: "finance", priority: "high", status: "urgent", created: "2026-03-05", due: "" },
+  { id: 6, title: "Financial dump — Organize all financial documents", category: "finance", priority: "normal", status: "open", created: "2026-03-05", due: "" },
+  { id: 7, title: "Brain map updates from prior sessions", category: "business", priority: "normal", status: "open", created: "2026-03-05", due: "" },
+  { id: 8, title: "DocVault AI — Build MVP skill (Gmail document scanner)", category: "product", priority: "normal", status: "open", created: "2026-03-05", due: "" },
+  { id: 9, title: "SignPad — Register domain (signpad.ca or signpad.tools)", category: "product", priority: "low", status: "open", created: "2026-03-05", due: "" },
+  { id: 10, title: "SignPad — Deploy v1.5 on Vercel with branding", category: "product", priority: "low", status: "open", created: "2026-03-05", due: "" },
+  { id: 11, title: "Woodstock property — 679 Glencairn Ave tax follow-up", category: "property", priority: "normal", status: "open", created: "2026-03-05", due: "" },
+  // Done items from today
+  { id: 100, title: "GAP Claim — Complete and submit signed form with all supporting docs", category: "insurance", priority: "urgent", status: "done", created: "2026-03-05", due: "" },
+  { id: 101, title: "DocVault AI — Product concept document (.docx)", category: "product", priority: "normal", status: "done", created: "2026-03-05", due: "" },
+  { id: 102, title: "SignPad — Product concept document (.docx)", category: "product", priority: "normal", status: "done", created: "2026-03-05", due: "" },
+  { id: 103, title: "Digital Signature Pad — Built and saved to vault", category: "product", priority: "normal", status: "done", created: "2026-03-05", due: "" },
+  { id: 104, title: "Secure Signature Vault — PIN-protected tool built", category: "product", priority: "normal", status: "done", created: "2026-03-05", due: "" },
+  { id: 105, title: "Email to Shrey — Declaration page request sent", category: "insurance", priority: "high", status: "done", created: "2026-03-05", due: "" },
+  { id: 106, title: "Email body PDFs — 6 important emails saved as PDFs", category: "personal", priority: "normal", status: "done", created: "2026-03-05", due: "" },
+  { id: 107, title: "Document Vault — All files sorted from drop box", category: "business", priority: "normal", status: "done", created: "2026-03-05", due: "" },
+];
+
+// ===== INIT =====
+function init() {
+  const stored = localStorage.getItem("bd_tasks");
+  if (stored) {
+    tasks = JSON.parse(stored);
+  } else {
+    tasks = DEFAULT_TASKS;
+    save();
+  }
+  const notes = localStorage.getItem("bd_notes");
+  if (notes) document.getElementById("quickNote").value = notes;
+  render();
+}
+
+function save() {
+  localStorage.setItem("bd_tasks", JSON.stringify(tasks));
+}
+
+function saveNotes() {
+  localStorage.setItem("bd_notes", document.getElementById("quickNote").value);
+}
+
+// ===== ADD TASK =====
+function addTask() {
+  const input = document.getElementById("newTask");
+  const text = input.value.trim();
+  if (!text) return;
+
+  const category = document.getElementById("newCategory").value;
+  const priority = document.getElementById("newPriority").value;
+
+  tasks.push({
+    id: Date.now(),
+    title: text,
+    category: category,
+    priority: priority,
+    status: priority === "urgent" ? "urgent" : "open",
+    created: new Date().toISOString().slice(0, 10),
+    due: ""
+  });
+
+  input.value = "";
+  save();
+  render();
+}
+
+// ===== UNDO SYSTEM =====
+function saveUndo(msg) {
+  undoStack.push({ snapshot: JSON.stringify(tasks), msg });
+  if (undoStack.length > 20) undoStack.shift(); // Keep last 20
+  showUndoToast(msg);
+}
+
+function undoAction() {
+  if (undoStack.length === 0) return;
+  const prev = undoStack.pop();
+  tasks = JSON.parse(prev.snapshot);
+  save(); render();
+  hideUndo();
+  showUndoToast("Undone!", true);
+}
+
+function showUndoToast(msg, brief) {
+  const toast = document.getElementById("undoToast");
+  document.getElementById("undoMsg").textContent = msg;
+  toast.classList.add("visible");
+  if (undoTimeout) clearTimeout(undoTimeout);
+  undoTimeout = setTimeout(() => hideUndo(), brief ? 1500 : 6000);
+}
+
+function hideUndo() {
+  document.getElementById("undoToast").classList.remove("visible");
+  if (undoTimeout) clearTimeout(undoTimeout);
+}
+
+// Keyboard shortcut: Ctrl+Z / Cmd+Z
+document.addEventListener("keydown", function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+    e.preventDefault();
+    undoAction();
+  }
+});
+
+// ===== MOVE / DELETE =====
+function moveRight(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  saveUndo(`Moved "${task.title.slice(0,30)}..." right`);
+  if (task.status === "urgent") task.status = "open";
+  else if (task.status === "open") task.status = "done";
+  save(); render();
+}
+
+function moveLeft(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  saveUndo(`Moved "${task.title.slice(0,30)}..." left`);
+  if (task.status === "done") task.status = "open";
+  else if (task.status === "open") task.status = "urgent";
+  save(); render();
+}
+
+function deleteTask(id) {
+  const task = tasks.find(t => t.id === id);
+  saveUndo(`Deleted "${task ? task.title.slice(0,30) : ''}..."`);
+  tasks = tasks.filter(t => t.id !== id);
+  save(); render();
+}
+
+function clearDone() {
+  const doneCount = tasks.filter(t => t.status === "done").length;
+  if (doneCount === 0) return;
+  if (confirm("Clear all completed items?")) {
+    saveUndo(`Cleared ${doneCount} done items`);
+    tasks = tasks.filter(t => t.status !== "done");
+    save(); render();
+  }
+}
+
+// ===== FILTER =====
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
+
+// ===== RENDER =====
+function render() {
+  const filtered = currentFilter === "all" ? tasks : tasks.filter(t => t.category === currentFilter);
+
+  const urgent = filtered.filter(t => t.status === "urgent");
+  const open = filtered.filter(t => t.status === "open");
+  const done = filtered.filter(t => t.status === "done");
+
+  // Sort: urgent/high first
+  const priorityOrder = { urgent: 0, high: 1, normal: 2, low: 3 };
+  const sortFn = (a, b) => (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+  urgent.sort(sortFn);
+  open.sort(sortFn);
+  done.sort((a, b) => b.id - a.id); // Most recent done first
+
+  document.getElementById("urgentList").innerHTML = urgent.length ? urgent.map(cardHTML).join("") : '<div class="empty-col">Nothing urgent. Nice.</div>';
+  document.getElementById("openList").innerHTML = open.length ? open.map(cardHTML).join("") : '<div class="empty-col">All clear here.</div>';
+  document.getElementById("doneList").innerHTML = done.length ? done.map(cardHTML).join("") : '<div class="empty-col">Get something done!</div>';
+
+  // Counts
+  document.getElementById("urgentCount").textContent = urgent.length;
+  document.getElementById("openCount").textContent = open.length;
+  document.getElementById("doneCount").textContent = done.length;
+  document.getElementById("urgentColCount").textContent = urgent.length;
+  document.getElementById("openColCount").textContent = open.length;
+  document.getElementById("doneColCount").textContent = done.length;
+}
+
+function cardHTML(task) {
+  const isDone = task.status === "done";
+  return `
+    <div class="card priority-${task.priority} ${isDone ? 'done-card' : ''}">
+      <div class="card-actions">
+        ${task.status !== "urgent" ? `<button class="card-btn move-left" onclick="moveLeft(${task.id})" title="Move left">&#9664;</button>` : ''}
+        ${task.status !== "done" ? `<button class="card-btn move-right" onclick="moveRight(${task.id})" title="Move right">&#9654;</button>` : ''}
+        <button class="card-btn delete" onclick="deleteTask(${task.id})" title="Delete">&times;</button>
+      </div>
+      <div class="card-title">${task.title}</div>
+      <div class="card-meta">
+        <span class="card-tag tag-${task.category}">${task.category}</span>
+        <span class="card-date">${task.created}</span>
+        ${task.due ? `<span class="card-due">Due: ${task.due}</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+init();
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered'));
+}
+</script>
+</body>
+</html>
