@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>BrainDump — Raj Renos Inc.</title>
+<title>BrainDump</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1B3A5C">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -453,6 +453,10 @@ let undoStack = [];  // Stack of previous states for undo
 let undoTimeout = null;
 
 const DEFAULT_TASKS = [
+  { id: 1, title: "Welcome to BrainDump! Add your first task above.", category: "personal", priority: "normal", status: "open", created: "2026-01-01", due: "" },
+  { id: 2, title: "Drag tasks between columns to change status", category: "work", priority: "normal", status: "open", created: "2026-01-01", due: "" },
+  { id: 3, title: "Try the filter chips to focus on what matters", category: "work", priority: "urgent", status: "open", created: "2026-01-01", due: "" },
+];nst DEFAULT_TASKS = [
   // From our sessions — pre-loaded
   { id: 1, title: "GAP Claim #166312 — Wait for confirmation from Insurance Insight", category: "insurance", priority: "high", status: "open", created: "2026-03-05", due: "" },
   { id: 2, title: "Wait for Shrey's response — Declaration page request email sent", category: "insurance", priority: "normal", status: "open", created: "2026-03-05", due: "" },
